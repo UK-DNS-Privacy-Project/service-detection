@@ -20,10 +20,10 @@ var (
 	mu       sync.Mutex
 	ttl      = 5 * time.Minute // Time-to-live for each DNS record
 	knownIPs = map[string]bool{
-		"209.250.227.42": true,
-		"64.176.190.82":  true,
-		"2001:19f0:7400:13c7:5400:05ff:fe40:d1ad": true,
-		"2a05:f480:3400:24fd:5400:05ff:fe40:e60b": true,
+		"209.250.227.42":                         true,
+		"64.176.190.82":                          true,
+		"2001:19f0:7400:13c7:5400:5ff:fe40:d1ad": true,
+		"2a05:f480:3400:24fd:5400:5ff:fe40:e60b": true,
 	}
 	dnsServers = []string{
 		os.Getenv("ACME_CHALLENGE_DNS_1"),
@@ -95,7 +95,16 @@ func DNSHandler(w dns.ResponseWriter, r *dns.Msg) {
 							mu.Lock()
 							rec, exists := dnsData[q.Name]
 							if exists {
-								rec.ips = append(rec.ips, host)
+								ipExists := false
+								for _, ip := range rec.ips {
+									if ip == host {
+										ipExists = true
+										break
+									}
+								}
+								if !ipExists {
+									rec.ips = append(rec.ips, host)
+								}
 							} else {
 								rec = record{ips: []string{host}, timestamp: time.Now()}
 							}
@@ -117,7 +126,16 @@ func DNSHandler(w dns.ResponseWriter, r *dns.Msg) {
 							mu.Lock()
 							rec, exists := dnsData[q.Name]
 							if exists {
-								rec.ips = append(rec.ips, host)
+								ipExists := false
+								for _, ip := range rec.ips {
+									if ip == host {
+										ipExists = true
+										break
+									}
+								}
+								if !ipExists {
+									rec.ips = append(rec.ips, host)
+								}
 							} else {
 								rec = record{ips: []string{host}, timestamp: time.Now()}
 							}
