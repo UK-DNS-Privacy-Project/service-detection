@@ -47,7 +47,7 @@ func DNSHandler(w dns.ResponseWriter, r *dns.Msg) {
 		log.Println("Query Received", q.Qtype, q.Name)
 
 		if strings.ToLower(q.Name) == os.Getenv("ACME_CHALLENGE_DOMAIN") {
-			// Query upstream Vultr DNS servers for TXT record
+			// Query upstream DNS servers for TXT record
 			txtRecords, err := queryRoundRobinDNS(q.Name)
 			if err != nil {
 				log.Printf("Failed to query upstream servers for %s: %v\n", q.Name, err)
@@ -176,10 +176,16 @@ func JSONHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	requesterIP := r.Header.Get("X-Forwarded-For")
+	if requesterIP == "" {
+		requesterIP, _, _ = net.SplitHostPort(r.RemoteAddr)
+	}
+
 	response := map[string]interface{}{
-		"domain": host,
-		"ips":    rec.ips,
-		"known":  true,
+		"domain":      host,
+		"ips":         rec.ips,
+		"known":       true,
+		"requesterIP": requesterIP,
 	}
 	for _, ip := range rec.ips {
 		if !knownIPs[ip] {
