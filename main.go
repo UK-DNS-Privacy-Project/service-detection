@@ -33,7 +33,7 @@ var (
 )
 
 type record struct {
-	ip        string
+	ips       []string
 	timestamp time.Time
 }
 
@@ -88,14 +88,21 @@ func DNSHandler(w dns.ResponseWriter, r *dns.Msg) {
 				rr, err := dns.NewRR(fmt.Sprintf("%s 60 A %s", q.Name, os.Getenv("TARGET_IPV4")))
 				if err == nil {
 					m.Answer = append(m.Answer, rr)
-					mu.Lock()
 
 					host, _, err := net.SplitHostPort(w.RemoteAddr().String())
 					if err == nil {
-						dnsData[q.Name] = record{ip: host, timestamp: time.Now()}
+						if err == nil {
+							mu.Lock()
+							rec, exists := dnsData[q.Name]
+							if exists {
+								rec.ips = append(rec.ips, host)
+							} else {
+								rec = record{ips: []string{host}, timestamp: time.Now()}
+							}
+							dnsData[q.Name] = rec
+							mu.Unlock()
+						}
 					}
-
-					mu.Unlock()
 				}
 			}
 		case dns.TypeAAAA:
@@ -103,6 +110,21 @@ func DNSHandler(w dns.ResponseWriter, r *dns.Msg) {
 				rr, err := dns.NewRR(fmt.Sprintf("%s 60 AAAA %s", q.Name, os.Getenv("TARGET_IPV6")))
 				if err == nil {
 					m.Answer = append(m.Answer, rr)
+
+					host, _, err := net.SplitHostPort(w.RemoteAddr().String())
+					if err == nil {
+						if err == nil {
+							mu.Lock()
+							rec, exists := dnsData[q.Name]
+							if exists {
+								rec.ips = append(rec.ips, host)
+							} else {
+								rec = record{ips: []string{host}, timestamp: time.Now()}
+							}
+							dnsData[q.Name] = rec
+							mu.Unlock()
+						}
+					}
 				}
 			}
 		case dns.TypeHTTPS:
@@ -136,10 +158,13 @@ func JSONHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]string{
+	response := map[string]interface{}{
 		"domain": host,
-		"ip":     rec.ip,
-		"known":  fmt.Sprintf("%v", knownIPs[rec.ip]),
+		"ips":    rec.ips,
+		"known":  make([]bool, len(rec.ips)),
+	}
+	for i, ip := range rec.ips {
+		response["known"].([]bool)[i] = knownIPs[ip]
 	}
 
 	w.Header().Set("Content-Type", "application/json")
