@@ -179,10 +179,13 @@ func JSONHandler(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{
 		"domain": host,
 		"ips":    rec.ips,
-		"known":  make([]bool, len(rec.ips)),
+		"known":  true,
 	}
-	for i, ip := range rec.ips {
-		response["known"].([]bool)[i] = knownIPs[ip]
+	for _, ip := range rec.ips {
+		if !knownIPs[ip] {
+			response["known"] = false
+			break
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
