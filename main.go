@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
+	"github.com/oschwald/geoip2-golang"
 )
 
 var (
@@ -35,6 +36,54 @@ var (
 type record struct {
 	ips       []string
 	timestamp time.Time
+}
+
+func lookupGeoIPCity(ip string) (string, error) {
+	db, err := geoip2.Open("/usr/local/share/GeoIP/GeoLite2-City.mmdb")
+	if err != nil {
+		return "", err
+	}
+	defer db.Close()
+
+	parsedIP := net.ParseIP(ip)
+	record, err := db.City(parsedIP)
+	if err != nil {
+		return "", err
+	}
+
+	return record.City.Names["en"], nil
+}
+
+func lookupGeoIPCountry(ip string) (string, error) {
+	db, err := geoip2.Open("/usr/local/share/GeoIP/GeoLite2-Country.mmdb")
+	if err != nil {
+		return "", err
+	}
+	defer db.Close()
+
+	parsedIP := net.ParseIP(ip)
+	record, err := db.Country(parsedIP)
+	if err != nil {
+		return "", err
+	}
+
+	return record.Country.Names["en"], nil
+}
+
+func lookupGeoIPASN(ip string) (string, error) {
+	db, err := geoip2.Open("/usr/local/share/GeoIP/GeoLite2-ASN.mmdb")
+	if err != nil {
+		return "", err
+	}
+	defer db.Close()
+
+	parsedIP := net.ParseIP(ip)
+	record, err := db.ASN(parsedIP)
+	if err != nil {
+		return "", err
+	}
+
+	return record.AutonomousSystemOrganization, nil
 }
 
 // DNSHandler handles DNS requests
@@ -181,11 +230,29 @@ func JSONHandler(w http.ResponseWriter, r *http.Request) {
 		requesterIP, _, _ = net.SplitHostPort(r.RemoteAddr)
 	}
 
+	geoIPCity, err := lookupGeoIPCity(requesterIP)
+	if err != nil {
+		log.Printf("GeoIP lookup failed for %s: %v\n", requesterIP, err)
+	}
+
+	geoIPCountry, err := lookupGeoIPCountry(requesterIP)
+	if err != nil {
+		log.Printf("GeoIP lookup failed for %s: %v\n", requesterIP, err)
+	}
+
+	geoIPASN, err := lookupGeoIPASN(requesterIP)
+	if err != nil {
+		log.Printf("ASN lookup failed for %s: %v\n", requesterIP, err)
+	}
+
 	response := map[string]interface{}{
 		"domain":      host,
 		"ips":         rec.ips,
 		"known":       true,
 		"requesterIP": requesterIP,
+		"city":        geoIPCity,
+		"country":     geoIPCountry,
+		"isp":         geoIPASN,
 	}
 	for _, ip := range rec.ips {
 		if !knownIPs[ip] {
