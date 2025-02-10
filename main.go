@@ -86,6 +86,17 @@ func lookupGeoIPASN(ip string) (string, error) {
 	return record.AutonomousSystemOrganization, nil
 }
 
+func lookupReverseDNS(ip string) (string, error) {
+	addrs, err := net.LookupAddr(ip)
+	if err != nil {
+		return "", err
+	}
+	if len(addrs) > 0 {
+		return addrs[0], nil
+	}
+	return "", nil
+}
+
 // DNSHandler handles DNS requests
 func DNSHandler(w dns.ResponseWriter, r *dns.Msg) {
 	m := new(dns.Msg)
@@ -245,6 +256,15 @@ func JSONHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("ASN lookup failed for %s: %v\n", requesterIP, err)
 	}
 
+	servers := make(map[string]string)
+	for _, ip := range rec.ips {
+		reverseDNS, err := lookupReverseDNS(ip)
+		if err != nil {
+			log.Printf("Reverse DNS lookup failed for %s: %v\n", ip, err)
+		}
+		servers[ip] = reverseDNS
+	}
+
 	response := map[string]interface{}{
 		"domain":      host,
 		"ips":         rec.ips,
@@ -253,6 +273,7 @@ func JSONHandler(w http.ResponseWriter, r *http.Request) {
 		"city":        geoIPCity,
 		"country":     geoIPCountry,
 		"isp":         geoIPASN,
+		"servers":     servers,
 	}
 	for _, ip := range rec.ips {
 		if !knownIPs[ip] {
