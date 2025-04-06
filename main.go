@@ -225,6 +225,14 @@ func JSONHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Debug log all headers
+	log.Println("HTTP Headers:")
+	for name, values := range r.Header {
+		for _, value := range values {
+			log.Printf("  %s: %s", name, value)
+		}
+	}
+
 	mu.Lock()
 	rec, ok := dnsData[host]
 	mu.Unlock()
