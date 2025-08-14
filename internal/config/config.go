@@ -29,6 +29,9 @@ var (
 	TargetNS            = os.Getenv("TARGET_NS")
 	TargetIPV4          = os.Getenv("TARGET_IPV4")
 	TargetIPV6          = os.Getenv("TARGET_IPV6")
+	Now                 = func() time.Time {
+		return time.Now()
+	}
 )
 
 func SetupExpiredRecordCleanup() {

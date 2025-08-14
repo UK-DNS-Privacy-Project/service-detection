@@ -10,6 +10,13 @@ import (
 	"dnsprivacy.org.uk/resolver/internal/config"
 )
 
+var (
+	geoIPCityLookup    = maxmindGeoIPCity
+	geoIPCountryLookup = maxmindGeoIPCountry
+	geoIPASNLookup     = maxmindGeoIPASN
+	reverseDNSLookup   = lookupReverseDNS
+)
+
 func Start() {
 	http.HandleFunc("/json", jsonHandler)
 	http.HandleFunc("/", rootHandler)
@@ -56,24 +63,24 @@ func jsonHandler(w http.ResponseWriter, r *http.Request) {
 		requesterIP, _, _ = net.SplitHostPort(r.RemoteAddr)
 	}
 
-	geoIPCity, err := lookupGeoIPCity(requesterIP)
+	geoIPCity, err := geoIPCityLookup(requesterIP)
 	if err != nil {
 		log.Printf("GeoIP lookup failed for %s: %v\n", requesterIP, err)
 	}
 
-	geoIPCountry, err := lookupGeoIPCountry(requesterIP)
+	geoIPCountry, err := geoIPCountryLookup(requesterIP)
 	if err != nil {
 		log.Printf("GeoIP lookup failed for %s: %v\n", requesterIP, err)
 	}
 
-	geoIPASN, err := lookupGeoIPASN(requesterIP)
+	geoIPASN, err := geoIPASNLookup(requesterIP)
 	if err != nil {
 		log.Printf("ASN lookup failed for %s: %v\n", requesterIP, err)
 	}
 
 	servers := make(map[string]string)
 	for _, ip := range rec.IPs {
-		reverseDNS, err := lookupReverseDNS(ip)
+		reverseDNS, err := reverseDNSLookup(ip)
 		if err != nil {
 			log.Printf("Reverse DNS lookup failed for %s: %v\n", ip, err)
 		}

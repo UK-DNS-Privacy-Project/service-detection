@@ -6,7 +6,7 @@ import (
 	"github.com/oschwald/geoip2-golang"
 )
 
-func lookupGeoIPCity(ip string) (string, error) {
+func maxmindGeoIPCity(ip string) (string, error) {
 	db, err := geoip2.Open("/usr/local/share/GeoIP/GeoLite2-City.mmdb")
 	if err != nil {
 		return "", err
@@ -22,7 +22,7 @@ func lookupGeoIPCity(ip string) (string, error) {
 	return record.City.Names["en"], nil
 }
 
-func lookupGeoIPCountry(ip string) (string, error) {
+func maxmindGeoIPCountry(ip string) (string, error) {
 	db, err := geoip2.Open("/usr/local/share/GeoIP/GeoLite2-Country.mmdb")
 	if err != nil {
 		return "", err
@@ -38,7 +38,7 @@ func lookupGeoIPCountry(ip string) (string, error) {
 	return record.Country.Names["en"], nil
 }
 
-func lookupGeoIPASN(ip string) (string, error) {
+func maxmindGeoIPASN(ip string) (string, error) {
 	db, err := geoip2.Open("/usr/local/share/GeoIP/GeoLite2-ASN.mmdb")
 	if err != nil {
 		return "", err

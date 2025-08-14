@@ -6,7 +6,7 @@ This repository contains a application written in Go that detects if a user is u
 
 ### Prerequisites
 
-- Go 1.23 or later
+- Go 1.24 or later
 - Docker (optional, for containerized deployment)
 
 ### Installation
