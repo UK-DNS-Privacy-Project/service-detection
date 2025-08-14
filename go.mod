@@ -3,7 +3,7 @@ module dnsprivacy.org.uk/resolver
 go 1.24.2
 
 require (
-	github.com/miekg/dns v1.1.67
+	github.com/miekg/dns v1.1.68
 	github.com/oschwald/geoip2-golang v1.13.0
 )
 
